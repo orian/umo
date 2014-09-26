@@ -1,0 +1,40 @@
+message CouncillorVote {
+  enum VoteType {
+    UNKNOWN = 0;
+    IN_FAVOR = 1;
+    AGAINST = 2;
+    ABSTAIN = 3;  // wstrzymal sie
+    NO_VOTE = 4;
+    ABSENT  = 5;  // nieobecny
+  }
+  optional int32 ordinal_number = 1;  // LP
+  optional string name = 2;   // nazwisko i imie
+  optional VoteType vote = 3;         // glos
+}
+
+message VoteReport {
+  optional string council = 1000;  // "LIII sesja Rady Miasta"
+  optional int32 number = 1001;    // numer glosowania
+  optional string title = 1002;    // tytul głosowania
+
+  enum OpenessType {
+    UNKNOWN = 0;  // nieznane
+    PUBLIC  = 1;  // jawne
+    SECRET  = 2;  // tajne
+  }
+
+  optional OpenessType vote_type = 1003;  // typ glosowania
+  optional int64 date_sec = 1004;      // data glosowania
+  optional string date_str = 1005;     // data jako string
+  optional int32 entitle = 1006;       // liczba obecnych
+  optional int32 present = 1007;       // obecnych
+  optional int32 absent = 1008;         // nieobecnych
+
+  // votes - glosy
+  optional int32 votes_in_favor = 1009;  // za
+  optional int32 votes_against = 1010;   // przeciwko
+  optional int32 votes_abstain = 1011;   // wstrzymane
+  optional int32 votes_no_vote = 1012;   // nieoddane
+
+  repeated CouncillorVote votes = 1;
+}
