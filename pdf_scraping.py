@@ -4,7 +4,7 @@
 # <codecell>
 
 a='51.01 633.55 Td\n'
-b='(LICZBA UPRAWNIONYCH) Tj\n'    
+b='(LICZBA UPRAWNIONYCH) Tj\n'
 re.compile(r'() () Td\\n')
 m = re.match(r'(?P<x>[\d\.]+) (?P<y>[\d\.]+) Td\n', a)
 print(m.groupdict())
@@ -36,7 +36,7 @@ class Context(object):
                     self._state.on_exit(self)
                     self._state = x
                     self._state.on_enter(self)
-                
+
                 if self._state == self._end_state:
                     return
                 line_counter+=1
@@ -63,7 +63,7 @@ class State(object):
         if DEBUG:
             print('on_enter: {}'.format(self._name))
 
-            
+
 class TextObj(object):
     def __init__(self):
         self._x = 0.0
@@ -76,7 +76,7 @@ class TextObj(object):
     def __repr__(self):
         return '({x} {y} \'{t}\')'.format(x=self._x, y=self._y, t=self._text)
 
-    
+
 class BoxStateStart(State):
     def on_enter(self, ctx):
         ctx._texts.append(('MARKER',))
@@ -98,15 +98,15 @@ class BoxStateEnd(State):
             t = []
             for x in reversed(stack):
                 t.append(x._text)
-            
+
             stack[-1]._text = ' '.join(t)
 #             print('joined from {} {} {}'.format(idx, len(t), stack[-1]._text))
             ctx._texts.append(stack[-1])
         super(BoxStateEnd, self).on_exit(ctx)
-        
-    
+
+
 '51.01 633.55 Td\n'
-'(LICZBA UPRAWNIONYCH) Tj\n'    
+'(LICZBA UPRAWNIONYCH) Tj\n'
 class TextState(State):
     def __init__(self, name):
         super(TextState, self).__init__(name)
@@ -147,24 +147,24 @@ def create_state_machine(f):
     s_obj = State('obj')
     obj_start_f = lambda t: t.find('obj\n') >=0
     obj_end_f = lambda t: t.find('endobj\n') >=0
-    
+
     ctx._start_state.add_state(obj_start_f, s_obj)
     s_obj.add_state(obj_end_f, ctx._start_state)
-    
+
     s_stream = State('stream')
     stream_start_f = lambda t: t.find('stream\n') >=0
     stream_end_f = lambda t: t.find('endstream\n') >=0
-    
+
     s_obj.add_state(stream_start_f, s_stream)
     s_stream.add_state(stream_end_f, s_obj)
-    
+
     s_text = TextState('text')
     text_start_f = lambda t: t.find('BT\n') >=0
     text_end_f = lambda t: t.find('ET\n') >=0
-    
+
     s_stream.add_state(text_start_f, s_text)
     s_text.add_state(text_end_f, s_stream)
-    
+
     ctx.run(f)
     return ctx._texts
 
@@ -173,22 +173,22 @@ def create_state_machine2(f):
     s_obj = State('obj')
     obj_start_f = lambda t: t.find('obj\n') >=0
     obj_end_f = lambda t: t.find('endobj\n') >=0
-    
+
     ctx._start_state.add_state(obj_start_f, s_obj)
     s_obj.add_state(obj_end_f, ctx._start_state)
-    
+
     s_stream = State('stream')
     stream_start_f = lambda t: t.find('stream\n') >=0
     stream_end_f = lambda t: t.find('endstream\n') >=0
-    
+
     s_obj.add_state(stream_start_f, s_stream)
     s_stream.add_state(stream_end_f, s_obj)
-    
+
     s_box = BoxStateStart('box_start')
     box_start_f = lambda t: t=='n\n'
     box_end_f = lambda t: t=='W\n'
     s_stream.add_state(box_start_f, s_box, follow=True)
-    
+
     s_box_wait = State('box_wait')
     s_box.add_state(lambda x:True, s_box_wait)
     # there may be 2 ways to end box
@@ -196,14 +196,14 @@ def create_state_machine2(f):
     s_box_wait.add_state(box_end_f, s_box_end, follow=True)
     s_box_wait.add_state(stream_end_f, s_box_end, follow=True)
     s_box_end.add_state(lambda x:True, s_stream, follow=True)
-    
+
     s_text = TextState('text')
     text_start_f = lambda t: t.find('BT\n') >=0
     text_end_f = lambda t: t.find('ET\n') >=0
-    
+
     s_box_wait.add_state(text_start_f, s_text)
     s_text.add_state(text_end_f, s_box_wait)
-    
+
     ctx.run(f)
     return ctx._texts
 
@@ -222,10 +222,10 @@ class Parser(object):
         self._d_y = 2.0
     def __str__(self):
         return self._data.__str__()
-        
+
     def fill(self, move_x, move_y, field, obj=None, parser=None):
         assert move_x == 0 or move_y == 0
-        
+
         curr = self._text_objs[self._idx]
         prev = self._prev
         if self._prev:
@@ -242,18 +242,18 @@ class Parser(object):
             self._data[field] = val
         self._prev = curr
         self._idx += 1
-        
+
     def maybe_fill(self, move_x, move_y, field, cond=None, obj=None, parser=None):
         assert move_x == 0 or move_y == 0
-        
+
         if self._idx >= len(self._text_objs):
             return False
         curr = self._text_objs[self._idx]
         prev = self._prev
-        
+
         if cond != None and not cond(curr._text):
             return False
-        
+
         r_val = True
         if self._prev:
             if move_x>0:
@@ -265,7 +265,7 @@ class Parser(object):
         self._idx += 1
         if not r_val:
             return False
-                
+
         val = curr._text
         if parser != None:
             try:
@@ -278,35 +278,35 @@ class Parser(object):
             self._data[field] = val
 
         return True
-    
+
     def skip(self, move_x, move_y):
         assert move_x == 0 or move_y == 0
-       
+
         self._prev = self._text_objs[self._idx]
         self._idx += move_x+move_y
-    
+
     def maybe_skip(self, move_x, move_y, cond=None):
         assert move_x == 0 or move_y == 0
-        
+
         if self._idx >= len(self._text_objs):
             return False
-        
+
         curr = self._text_objs[self._idx]
-        
+
         if cond != None and not cond(curr._text):
             return False
-        
+
         self._prev = curr
         self._idx += 1
         return True
-    
+
     def rewind(self, d_idx):
         self._idx += d_idx
         if self._idx>0:
             self._prev = self._text_objs[self._idx-1]
         else:
             self._prev = None
-    
+
     def parse(self):
         self.fill(0,0,'council_session')
         self.skip(0,1)
@@ -326,22 +326,22 @@ class Parser(object):
         self.fill(1,0,'entitle', parser=int)
         self.skip(1,0)
         self.fill(1,0,'votes_in_favor', parser=int)
-        
+
         self.skip(0,1)
         self.fill(1,0,'present', parser=int)
         self.skip(1,0)
         self.fill(1,0,'votes_against', parser=int)
-        
+
         self.skip(0,1)
         self.fill(1,0,'absent', parser=int)
         self.skip(1,0)
         self.fill(1,0,'votes_abstain', parser=int)
-        
+
         #self.skip(0,1)  # two empty cells don't have object..
         #self.skip(1,0)
         self.skip(0,1)
         self.fill(1,0,'votes_no_vote', parser=int)
-        
+
         self.maybe_skip(0,1, cond=lambda t: t.lower().find('kworum')>=0)
         self.skip(0,1) # urpawnienie do glosowania
         self.skip(0,1) # LP
@@ -352,7 +352,7 @@ class Parser(object):
             self.fill(1,0, 'name', obj=council_vote)
             self.fill(1,0, 'vote', obj=council_vote)
             self._data['votes'].append(council_vote)
-            
+
             council_vote = {}
             fields_set=0
             fields_set += self.maybe_fill(1,0, 'ordinal_number', obj=council_vote, parser=int)
@@ -362,7 +362,7 @@ class Parser(object):
                 self._data['votes'].append(council_vote)
             else:
                 self.rewind(-3)
-                break   
+                break
 
 # <codecell>
 
@@ -390,7 +390,7 @@ def extract_from_file(in_path, out_path):
     #         print(line_counter, 'obj start')
     #     elif line.find('stream\n') >= 0:
     #         print(line_counter, 'stream begin')
-    
+
     file_handler.close()
     parser = Parser(t_objs)
     parser.parse()
@@ -398,7 +398,7 @@ def extract_from_file(in_path, out_path):
     #print(json.dumps(parser._data, indent=2, sort_keys=True))
     json.dump(parser._data, open(out_path, 'w'), indent=2, sort_keys=True)
     print('succeeded')
-    
+
 in_file='/home/orian/tmp/olsztyn_analiza_pdf/data/decoded/g6.pdf'
 out_file = in_file.replace('.pdf', '.json')
 extract_from_file(in_file, out_file)
