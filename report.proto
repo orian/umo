@@ -1,3 +1,5 @@
+syntax = 'proto3';
+
 message CouncillorVote {
   enum VoteType {
     UNKNOWN = 0;

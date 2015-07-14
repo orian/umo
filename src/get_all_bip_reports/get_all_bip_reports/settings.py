@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = 'get_all_bip_reports.spiders'
 ITEM_PIPELINES = {
     'get_all_bip_reports.files.FilesPipeline2': 500,
 }
-FILES_STORE = '/home/orian/workspace/olsztyn_analiza_pdf/src/get_all_bip_reports/downloads_tmp'
+FILES_STORE = '/data/downloads'
 DOWNLOAD_DELAY = 1.
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

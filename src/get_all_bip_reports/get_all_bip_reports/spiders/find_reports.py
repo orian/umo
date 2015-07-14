@@ -3,7 +3,7 @@ import re
 import logging
 import scrapy
 from get_all_bip_reports import items
-from scrapy.contrib.linkextractors import LinkExtractor
+from scrapy.linkextractors import LinkExtractor
 
 DEBUG=False
 DEBUG_CNT = 0
