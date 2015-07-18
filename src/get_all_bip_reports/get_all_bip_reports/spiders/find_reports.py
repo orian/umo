@@ -5,7 +5,7 @@ import scrapy
 from get_all_bip_reports import items
 from scrapy.linkextractors import LinkExtractor
 
-DEBUG=True
+DEBUG=False
 DEBUG_CNT = 0
 
 class FindReportsSpider(scrapy.Spider):
@@ -16,7 +16,7 @@ class FindReportsSpider(scrapy.Spider):
     'http://www.bip.olsztyn.eu/bip/folder/3098/sesje_rady_miasta/',
   )
 
-  def __init__(self, start=None, *args, **kwargs):
+  def __init__(self, start=None, start_many=None, *args, **kwargs):
     super(FindReportsSpider, self).__init__(*args, **kwargs)
     if start:
       self.start_urls = [start]
@@ -47,6 +47,7 @@ class FindReportsSpider(scrapy.Spider):
       k['text'] = link.text.encode('utf8')
       k['url'] = link.url
       k['ref'] = response.url
+      k['order'] = cnt
       yield k
       if cnt >= DEBUG_CNT and DEBUG:
         break
@@ -64,6 +65,7 @@ class FindReportsSpider(scrapy.Spider):
       fi['text'] = link.text.encode('utf8')
       fi['url'] = link.url
       fi['ref'] = response.url
+      fi['order'] = cnt
       yield fi
       if cnt >= DEBUG_CNT and DEBUG:
         break
@@ -83,6 +85,7 @@ class FindReportsSpider(scrapy.Spider):
       k['text'] = link.text.encode('utf8')
       k['url'] = link.url
       k['ref'] = response.url
+      k['order'] = cnt
       yield k
       if cnt >= DEBUG_CNT and DEBUG:
         break
@@ -99,6 +102,7 @@ class FindReportsSpider(scrapy.Spider):
       fi['text'] = link.text.encode('utf8')
       fi['url'] = link.url
       fi['ref'] = response.url
+      fi['order'] = cnt
       yield fi
       if cnt >= DEBUG_CNT and DEBUG:
         break
@@ -111,27 +115,41 @@ class FindReportsSpider(scrapy.Spider):
     self.print_links('kadencje', links)
     cnt = 0
 
-    k = items.PageItem()
-    k['text'] = 'Sesje Rady Miasta'
-    k['url'] = response.url
-    k['ref'] = '<entry point>'
-    yield k
-
     for link in links:
       yield scrapy.Request(link.url, callback=self.parse_kadencja)
       k = items.PageItem()
       k['text'] = link.text.encode('utf8')
       k['url'] = link.url
       k['ref'] = response.url
+      k['order'] = cnt
       yield k
       if cnt >= DEBUG_CNT and DEBUG:
         break
       cnt += 1
 
+  def find_document_name(self, response):
+    '''<caption>Rejestr zmian</caption>
+            <tbody>
+                <tr>
+                    <th>Nazwa dokumentu:</th>
+                    <td>XI Sesja Rady Miasta 24 czerwca 2015 r.</td>
+                </tr>'''
+    name = response.selector.css('.change-log-container').xpath('.//td/text()')
+    if name:
+      return name[0].extract()
+    return response.selector.xpath('//title/text()')[0].extract()
+
+
+
   def parse(self, response):
+    k = items.PageItem()
+    k['text'] = self.find_document_name(response)
+    k['url'] = response.url
+    k['ref'] = '<entry point>'
     f = None
     if response.url == 'http://www.bip.olsztyn.eu/bip/folder/3098/sesje_rady_miasta/':
       f = self.parse_main
+      k['text'] = 'Sesje Rady Miasta'
     elif FindReportsSpider.KADENCJA_RE.match(response.url):
       f = self.parse_kadencja
     elif FindReportsSpider.SESJA_RE.match(response.url):
@@ -141,6 +159,8 @@ class FindReportsSpider(scrapy.Spider):
     else:
       logging.warning('don\'t recognize url: {}', response.url)
       return
+
+    yield k
 
     for y in f(response):
       yield y
