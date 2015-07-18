@@ -1,0 +1,1 @@
+docker run --rm -i -v /home/orian/workspace/olsztyn_analiza_pdf/src/get_all_bip_reports:/src:ro -v /home/orian/workspace/olsztyn_analiza_pdf/data/dk:/data orian/scrapy:v0 crawl find_reports -a start=http://www.bip.olsztyn.eu/bip/dokument/311514/xi_sesja_rady_miasta_24_czerwca_2015_r_/ -o /data/items.json -t json

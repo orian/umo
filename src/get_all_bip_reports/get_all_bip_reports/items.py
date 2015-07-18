@@ -22,8 +22,10 @@ class FiledownloadItem(Item):
   text = Field()
   url = Field()
   ref = Field()
+  order = Field()
 
 class PageItem(Item):
   text = Field()
   url = Field()
   ref = Field()
+  order = Field()
